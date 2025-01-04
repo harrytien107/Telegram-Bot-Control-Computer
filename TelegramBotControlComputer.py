@@ -72,6 +72,24 @@ async def set_command_suggestions(context: ContextTypes.DEFAULT_TYPE):
 async def play_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global driver
 
+    # Kiểm tra trạng thái của Brave
+    brave_running = "brave.exe" in os.popen('tasklist').read()
+
+    if brave_running:
+        # Tạo nút chọn hành động (nằm ngang)
+        keyboard = [
+            [
+                InlineKeyboardButton("✅ Có", callback_data="close_brave_and_play"),
+                InlineKeyboardButton("❌ Không", callback_data="cancel_playvideo")
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text(
+            "Trình duyệt Brave hiện đang mở. Bạn có muốn đóng trình duyệt để phát video không?",
+            reply_markup=reply_markup
+        )
+        return
+
     # Lấy link từ tham số hoặc tin nhắn
     youtube_url = context.args[0] if context.args else update.message.text.strip()
 
@@ -100,6 +118,19 @@ async def play_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Chọn hành động:", reply_markup=reply_markup)
+
+
+# Xử lý hành động từ nút
+async def handle_brave_controls(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global driver
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == "close_brave_and_play":
+        os.system("taskkill /F /IM brave.exe")
+        await query.edit_message_text("Đã đóng Brave. Bạn có thể chạy lại lệnh /playvideo.")
+    elif query.data == "cancel_playvideo":
+        await query.edit_message_text("Lệnh /playvideo đã bị hủy.")
 
 # Xử lý button điều khiển video
 async def video_controls(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -421,6 +452,7 @@ async def main():
     app.add_handler(CallbackQueryHandler(video_controls, pattern="^(play_pause|rewind|forward|change_video|close_all)$"))
     app.add_handler(CommandHandler("customvolume", custom_volume))
     app.add_handler(CallbackQueryHandler(handle_volume_control, pattern="^(decrease_volume|increase_volume)$"))
+    app.add_handler(CallbackQueryHandler(handle_brave_controls, pattern="^(close_brave_and_play|cancel_playvideo)$"))
 
     # Tạo bàn phím gợi ý cho người dùng
     user_keyboard = [
