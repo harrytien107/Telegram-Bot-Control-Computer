@@ -25,7 +25,7 @@ This project is a Telegram bot that uses Selenium to automate tasks such as brow
 
 ### 2. Install Required Libraries
 Run the following command to install the necessary third-party libraries:
-`pip install pyautogui nest_asyncio selenium python-telegram-bot`
+`pip install pyautogui pillow nest_asyncio selenium python-telegram-bot`
 
 ---
 
@@ -94,6 +94,7 @@ TOKEN = "your-telegram-bot-token"
 1. Ensure **Chromedriver** matches your browser version. Check again if Selenium fails to launch.
 2. Make sure the paths (`CHROME_DRIVER_PATH`, `BRAVE_PATH`, `USER_DATA_DIR`, `nircmdc.exe`) are entered correctly.
 3. Do not share your **Telegram Token** publicly to avoid unauthorized control of your bot.
+4. If you get error message "Telegram.error.Timeout: Timed out". You just need to Revoke old token and Renew new token, then everything will be fine.
 
 ---
 
