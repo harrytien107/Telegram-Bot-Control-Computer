@@ -76,7 +76,7 @@ TOKEN = "your-telegram-bot-token"
 ## Running the Project
 1. Open a terminal in the directory containing the source file.
 2. Run the command:
-`python BotControlComputer.py`
+`python TelegramBotControlComputer.py`
 3. If everything is set up correctly, the bot will start listening for commands on Telegram.
 
 ---
@@ -85,8 +85,8 @@ TOKEN = "your-telegram-bot-token"
 1. Install PyInstaller:
 `pip install pyinstaller`
 2. Package the source file into a standalone `.exe` file:
-`pyinstaller --onefile BotControlComputer.py`
-3. The executable file will be saved in the `dist/BotControlComputer.exe` directory.
+`pyinstaller --onefile TelegramBotControlComputer.py`
+3. The executable file will be saved in the `dist/TelegramBotControlComputer.exe` directory.
 
 ---
 
