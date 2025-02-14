@@ -30,23 +30,29 @@ COMMANDS = {
     "/introduce": "Giới thiệu về tôi.",
     "/shutdown": "Lệnh tắt máy.",
     "/restart": "Lệnh khởi động máy.",
-    "/cancel": "Lệnh hủy toàn bộ các lệnh.",
-    "/screenshot": "Lệnh chụp ảnh màn hình và gửi về máy.",
-    "/uploadfile": "Yêu cầu người dùng gửi file để tải lên.",
-    "/downloadfile": "Yêu cầu người dùng gửi file để tải về.",
-    "/tasklist": "Hiển thị danh sách các tiến trình đang chạy.",
-    "/systeminfo": "Hiển thị thông tin hệ thống.",
-    "/ipconfig": "Hiển thị thông tin cấu hình mạng.",
+    "/hibernate": "Chế độ ngủ đông.", 
+    "/sleep": "Chế độ ngủ.",
+    "/cancel": "Huỷ toàn bộ các lệnh.",
+    "/lockdown": "Khóa máy tính.",
+    
+    "/screenshot": "Chụp ảnh màn hình và gửi về máy.",
+    "/uploadfile": "Người dùng gửi file để tải lên máy.",
+    "/downloadfile": "Người dùng nhập đường dẫn để tải về.",
+    "/tasklist": "Danh sách các tiến trình đang chạy.",
+    "/systeminfo": "Thông tin hệ thống.",
+    "/ipconfig": "Thông tin cấu hình mạng.",
     "/release": "Giải phóng địa chỉ IP hiện tại.",
     "/renew": "Gia hạn địa chỉ IP mới.",
-    "/netuser": "Hiển thị danh sách người dùng trên máy tính.",
-    "/whoami": "Hiển thị tên tài khoản đang đăng nhập.",
+    "/netuser": "Danh sách người dùng trên máy tính.", 
+    "/whoami": "Tên tài khoản đang đăng nhập.",
     "/hostname": "Hiển thị tên máy tính.",
     "/menu": "Hiển thị danh sách các lệnh.",
     "/playvideo": "Phát video YouTube từ link.",
     "/customvolume": "Điều chỉnh âm lượng.",
-    "/hibernate": "Lệnh chế độ ngủ đông.",
-    "/sleep": "Lệnh chế độ ngủ.",
+    "/controlmouse": "Điều khiển chuột ảo.",
+    "/keyboardemulator": "Điều khiển bàn phím ảo.",
+    "/deletefile": "Người dùng nhập đường dẫn để xoá file.",
+    "/openweb": "Mở các trang web từ lệnh.",
     "/spotify": "Điều khiển ứng dụng Spotify.",
     "/openspotify": "Mở ứng dụng Spotify.",
     "/kill": "Kết thúc một tiến trình đang chạy."
@@ -357,6 +363,9 @@ async def confirm_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action == "cancel":
         os.system("shutdown -a")
         await query.edit_message_text("Đã hủy toàn bộ lệnh.")
+    elif action == "lockdown":
+        os.system("rundll32.exe user32.dll,LockWorkStation")
+        await query.edit_message_text("Máy đã bị khóa.")
     else:
         await query.edit_message_text("Không có hành động được thực hiện.")
 
@@ -407,6 +416,10 @@ async def hibernate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Lệnh sleep 
 async def sleep(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ask_confirmation(update, context, "sleep")
+
+# Lệnh lockdown
+async def lockdown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await ask_confirmation(update, context, "lockdown")
 
 # Chụp ảnh màn hình
 async def screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -800,6 +813,50 @@ async def handle_kill_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         except Exception as e:
             await query.edit_message_text(f"Có lỗi xảy ra: {str(e)}")
 
+# Thêm các hàm mới
+async def delete_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text(
+            "Hãy nhập đường dẫn file bạn muốn xoá. Ví dụ: D:/example.format"
+        )
+        return
+
+    # Lấy và lưu đường dẫn file vào context.user_data
+    file_path = " ".join(context.args).strip()
+    context.user_data["file_path"] = file_path
+
+    # Kiểm tra file có tồn tại hay không
+    if os.path.isfile(file_path):
+        try:
+            os.remove(file_path)
+            await update.message.reply_text(f"File đã được xoá thành công: {file_path}")
+        except Exception as e:
+            await update.message.reply_text(f"Có lỗi xảy ra khi xoá file: {e}")
+    else:
+        await update.message.reply_text(f"Không tìm thấy file tại đường dẫn: {file_path}")
+
+async def open_web(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text(
+            "Hãy nhập URL bạn muốn mở. Ví dụ: https://www.google.com"
+        )
+        return
+
+    # Lấy URL từ tham số
+    url = " ".join(context.args).strip()
+
+    # Kiểm tra URL hợp lệ
+    if not re.match(r'^(http|https)://', url):
+        await update.message.reply_text("URL không hợp lệ. Hãy nhập URL bắt đầu bằng http:// hoặc https://")
+        return
+
+    # Mở URL trong trình duyệt mặc định
+    try:
+        os.system(f'start {url}')
+        await update.message.reply_text(f"Đã mở URL: {url}")
+    except Exception as e:
+        await update.message.reply_text(f"Có lỗi xảy ra khi mở URL: {e}")
+
 # Khởi chạy bot Telegram
 async def main():
     # Thay bằng token bot của bạn từ BotFather
@@ -840,16 +897,20 @@ async def main():
     app.add_handler(CommandHandler("kill", kill_process))
     app.add_handler(CallbackQueryHandler(handle_kill_callback, 
         pattern="^(kill_name_.*|kill_[0-9]+|cancel_kill|show_all_processes|confirm_kill_name_.*|confirm_kill_pid_[0-9]+|search_process)$"))
+    app.add_handler(CommandHandler("lockdown", lockdown))
+    app.add_handler(CommandHandler("deletefile", delete_file))
+    app.add_handler(CommandHandler("openweb", open_web))
 
     # Tạo bàn phím gợi ý cho người dùng
     user_keyboard = [
-        ["/shutdown", "/restart", "/cancel"],
-        ["/hibernate", "/sleep", "/screenshot"],
-        ["/uploadfile", "/downloadfile", "/tasklist"],
-        ["/systeminfo", "/ipconfig", "/release"],
-        ["/renew", "/netuser", "/whoami"],
-        ["/hostname", "/menu", "/playvideo", "/spotify"],
-        ["/introduce", "/customvolume", "/kill"]
+        ["/introduce"],
+        ["/shutdown", "/hibernate", "/lockdown", "/sleep", "/restart", "/cancel"],
+        ["/screenshot"],
+        ["/uploadfile", "/downloadfile", "/deletefile"],
+        ["/tasklist", "/kill", "/systeminfo", "/netuser", "/whoami", "/hostname"],
+        ["/ipconfig", "/release", "/renew"],
+        ["/menu", "/playvideo", "/spotify", "/openweb"],
+        ["/customvolume", "/controlmouse", "/keyboardemulator"]
     ]
 
     reply_markup = ReplyKeyboardMarkup(user_keyboard, one_time_keyboard=False, resize_keyboard=True)
